@@ -1,0 +1,13 @@
+body {
+    padding: 20px;
+}
+
+menu {
+    padding: 0;
+    margin: 0;
+}
+
+#tasklist ul {
+	list-style-type: none;
+	padding: 0;
+}
