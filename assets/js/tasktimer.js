@@ -4,6 +4,7 @@
 
 		//Public interface of Task object
 		return {
+
 			/**
 			 * Adds a second to the time spent on this task
 			 * 
@@ -66,6 +67,83 @@
 			"isFlushable": function() {
 
 			}
+
+		};
+	};
+
+	var TaskGroup = function() {
+
+		//Public interface of TaskGroup object
+		return {
+
+			/**
+			 * Adds a task to this group.
+			 * 
+			 * Its time spent will be added to the total of this group
+			 * Will not add the task if it is already part of this group.
+			 * 
+			 * @param  Task taskObject
+			 * @return TaskGroup This instance
+			 */
+			"addTask": function(taskObject) {
+
+			},
+
+			/**
+			 * If the task is found in this group, removes it
+			 * 
+			 * @param  Task taskObject 
+			 * @return TaskGroup This instance
+			 */
+			"removeTask": function(taskObject) {
+
+			},
+
+			/**
+			 * Retrieve the total time spent on all tasks in this group combined
+			 * 
+			 * @return int Time spent in seconds
+			 */
+			"getTimeSpent": function() {
+
+			},
+
+			/**
+			 * Retrieve the name of this group
+			 * 
+			 * @return string
+			 */
+			"getName": function() {
+
+			},
+
+			/**
+			 * Updates the name of this Task group
+			 * 
+			 * @return TaskGroup This instance
+			 */
+			"setName": function() {
+
+			},
+
+			/**
+			 * Marks the group to be removed on the next iteration
+			 * 
+			 * @return null
+			 */
+			"delete": function() { 
+
+			},
+
+			/**
+			 * Retrieve whether the group was set to be removed with delete()
+			 * 
+			 * @return bool true if delete() has ran
+			 */
+			"isFlushable": function() {
+
+			}
+
 		};
 	};
 
@@ -147,6 +225,7 @@
 			"pauseTimer": function() {
 
 			}
+			
 		};
 	};
 
