@@ -20,7 +20,7 @@
 		var taskName = '';
 
 		/**
-		 * Flag to set to true when public method delete() is ran		 *
+		 * Flag to set to true when public method delete() is ran
 		 * Marks that the task is to be deleted from outside lists
 		 * @type Boolean
 		 */
@@ -36,7 +36,7 @@
 				"name": "TaskException",
 				"message": message,
 				"toString": function() {
-					return this.name + ": " + message;
+					return this.name + ": " + this.message;
 				}
 			};
 		}
@@ -93,7 +93,8 @@
 				if (typeof newName === 'string') {
 					//check length. If exceeded, trim and add "..."
 					if (newName.length > MAX_TASK_NAME_LENGTH) {
-						taskName = newName.substr(0, MAX_TASK_NAME_LENGTH - 3) + '...';
+						taskName = newName.substr(0, MAX_TASK_NAME_LENGTH - 3) 
+							+ '...';
 					} else {
 						taskName = newName;
 					}
@@ -131,6 +132,92 @@
 
 	var TaskGroup = function() {
 
+		//Private constants
+		var MAX_GROUP_NAME_LENGTH = 50;
+
+		//Private properties
+		
+		/**
+		 * Holds the list of Task instances that are part of the group
+		 * @type Array Task instances
+		 */
+		var tasks = [];
+
+		/**
+		 * Name/label of this Task group, to identify it to the user
+		 * @type String
+		 */
+		var groupName = '';
+
+		/**
+		 * Flag to set to true when public method delete() is ran	
+		 * Marks that the task group is to be deleted from interface and whatnot
+		 * @type Boolean
+		 */
+		var flushable = false;
+
+		/**
+		 * If anything goes wrong within a TaskGroup object, this can be thrown.
+		 * 
+		 * @param string message Descriptive error message
+		 */
+		var TaskGroupException = function(message) {
+			return {
+				"name": "TaskGroupException",
+				"message": message,
+				"toString": function() {
+					return this.name + ": " + this.message;
+				}
+			};
+		}
+
+
+
+		/**
+		 * Confirms whether taskObject has all the interface methods required 
+		 * 
+		 * @param  Object taskObject Supposed Task instance to be checked
+		 * @return {Boolean}
+		 */
+		var isTask = function(taskObject) {
+			if (typeof taskObject == "object") {
+				var requiredTaskMethods = [
+					"increment",
+					"reset",
+					"getTimeSpent",
+					"getName",
+					"setName",
+					"delete",
+					"isFlushable"
+				];
+				for (var i = 0; i < requiredTaskMethods.length; i += 1) {
+					if (typeof taskObject[requiredTaskMethods[i]] != 'function') {
+						return false;
+					}
+				}
+				return true;
+			}
+			else {
+				return false;	
+			}
+		}
+
+		/**
+		 * Confirms this group houses the given taskObject
+		 * 
+		 * @param  Task Task object to look for
+		 * @return Boolean True if found in the group
+		 */
+		var hasTask = function(taskObject) {
+			for (var i = 0; i < tasks.length; i += 1) {
+				if (tasks[i] == taskObject) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+
 		//Public interface of TaskGroup object
 		return {
 
@@ -144,7 +231,17 @@
 			 * @return TaskGroup This instance
 			 */
 			"addTask": function(taskObject) {
+				if (isTask(taskObject)) {
+					if ( ! hasTask(taskObject)) {
+						tasks.push(taskObject);
+					}					
+				} else {
+					throw new TaskGroupException(
+						"addTask: taskObject does not have a valid Task interface."
+					);
+				}
 
+				return this;			
 			},
 
 			/**
@@ -154,7 +251,14 @@
 			 * @return TaskGroup This instance
 			 */
 			"removeTask": function(taskObject) {
+				for (var i = 0; i < tasks.length; i += 1) {
+					if(tasks[i] == taskObject) { //task located
+						tasks.splice(i, 1); //remove from array
+						break; //terminate looping through tasks
+					}
+				}
 
+				return this;
 			},
 
 			/**
@@ -163,7 +267,13 @@
 			 * @return int Time spent in seconds
 			 */
 			"getTimeSpent": function() {
+				var timeSpent = 0;
 
+				for (var i = 0; i < tasks.length; i += 1) {
+					timeSpent +=  tasks[i].getTimeSpent();
+				}
+
+				return timeSpent;
 			},
 
 			/**
@@ -172,16 +282,32 @@
 			 * @return string
 			 */
 			"getName": function() {
-
+				return groupName;
 			},
 
 			/**
 			 * Updates the name of this Task group
-			 * 
+			 *
+			 * @param String newName
 			 * @return TaskGroup This instance
 			 */
-			"setName": function() {
+			"setName": function(newName) {
+				if (typeof newName === 'string') {
+					//check length. If exceeded, trim and add "..."
+					if (newName.length > MAX_GROUP_NAME_LENGTH) {
+						groupName = newName.substr(0, MAX_GROUP_NAME_LENGTH - 3) 
+							+ '...';
+					} else {
+						groupName = newName;
+					}
+				} else {
+					throw new TaskGroupException(
+						"setName: type mismatch. newName should be of type string, " 
+						+ typeof(newName) + " given."
+					);
+				}
 
+				return this;
 			},
 
 			/**
@@ -190,7 +316,7 @@
 			 * @return null
 			 */
 			"delete": function() { 
-
+				flushable = true;
 			},
 
 			/**
@@ -199,7 +325,7 @@
 			 * @return boolean true if delete() has ran
 			 */
 			"isFlushable": function() {
-
+				return flushable;
 			}
 
 		};
