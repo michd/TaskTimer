@@ -1,12 +1,51 @@
-(function($) {
+(function ($) {
 
-	var Task = function() {
+	//Helper functions
+
+	/**
+	 * Confirms whether taskObject has all the interface methods required 
+	 * 
+	 * @param  Object taskObject Supposed Task instance to be checked
+	 * @return {Boolean}
+	 */
+	var isTask = function (taskObject) {
+		var i;
+
+		if (typeof taskObject === "object") {
+			var requiredTaskMethods = [
+				"increment",
+				"reset",
+				"getTimeSpent",
+				"getName",
+				"getId",
+				"setName",
+				"delete",
+				"isFlushable"
+			];
+			for (i = 0; i < requiredTaskMethods.length; i += 1) {
+				if (typeof taskObject[requiredTaskMethods[i]] !== 'function') {
+					return false;
+				}
+			}
+			return true;
+		} else {
+			return false;
+		}
+	};
+
+	var Task = function (uniqueId) {
 
 		//Private constants
 		var MAX_TASK_NAME_LENGTH = 100;
 
 		//Private properties
 		
+		/**
+		 * Unique identifier for the task, set at creation time
+		 * @type String
+		 */
+		var id = "";
+
 		/**
 		 * Time spent on this task so far, in seconds 
 		 * @type Number
@@ -17,7 +56,7 @@
 		 * Name/label for this task, to identify it to the user
 		 * @type String
 		 */
-		var taskName = '';
+		var taskName = "";
 
 		/**
 		 * Flag to set to true when public method delete() is ran
@@ -31,7 +70,7 @@
 		 * 
 		 * @param string message Descriptive error message
 		 */
-		var TaskException = function(message) {
+		var TaskException = function (message) {
 			return {
 				"name": "TaskException",
 				"message": message,
@@ -39,6 +78,20 @@
 					return this.name + ": " + this.message;
 				}
 			};
+		};
+
+		if (typeof uniqueId !== 'object' && typeof uniqueId !== 'undefined') {
+			if (typeof uniqueId.toString === 'function') {
+				id = uniqueId.toString();
+			} else {
+				throw new TaskException(
+					"Constructor: uniqueId is not stringifyable."
+				);
+			}
+		} else {
+			throw new TaskException(
+				"Constructor: uniqueId is not stringifyable, is " + typeof uniqueId
+			);
 		}
 
 		//Public interface of Task object
@@ -50,7 +103,7 @@
 			 * 
 			 * @return Task This instance
 			 */
-			"increment": function() {
+			"increment": function () {
 				timeSpent += 1;
 				return this;
 			},
@@ -60,7 +113,7 @@
 			 * 
 			 * @return Task This instance
 			 */
-			"reset": function() {
+			"reset": function () {
 				timeSpent = 0;
 				return this;
 			},
@@ -70,7 +123,7 @@
 			 * 
 			 * @return int Time spent in seconds
 			 */
-			"getTimeSpent": function() {
+			"getTimeSpent": function () {
 				return timeSpent;
 			},
 
@@ -79,9 +132,17 @@
 			 * 
 			 * @return string
 			 */
-			"getName": function() {
+			"getName": function () {
 				return taskName;
 			},
+
+			/**
+			 * Retrieve the unique identifier for this task
+			 * @return string [description]
+			 */
+			"getId": function () {
+				return identifier;
+			}
 
 			/**
 			 * Updates the name of this task
@@ -89,7 +150,7 @@
 			 * @param string newName
 			 * @return Task This instance
 			 */
-			"setName": function(newName) {
+			"setName": function (newName) {
 				if (typeof newName === 'string') {
 					//check length. If exceeded, trim and add "..."
 					if (newName.length > MAX_TASK_NAME_LENGTH) {
@@ -113,7 +174,7 @@
 			 * 
 			 * @return null
 			 */
-			"delete": function() {
+			"delete": function () {
 				flushable = true;
 				return null;
 			},
@@ -123,14 +184,14 @@
 			 * 
 			 * @return boolean true if delete() has ran
 			 */
-			"isFlushable": function() {
+			"isFlushable": function () {
 				return flushable;
 			}
 
 		};
 	};
 
-	var TaskGroup = function() {
+	var TaskGroup = function () {
 
 		//Private constants
 		var MAX_GROUP_NAME_LENGTH = 50;
@@ -138,10 +199,16 @@
 		//Private properties
 		
 		/**
+		 * Unique identifier for the task group, set at creation time
+		 * @type String
+		 */
+		var id = "";
+		
+		/**
 		 * Holds the list of Task instances that are part of the group
 		 * @type Array Task instances
 		 */
-		var tasks = [];
+		var tasks = [ ];
 
 		/**
 		 * Name/label of this Task group, to identify it to the user
@@ -161,7 +228,7 @@
 		 * 
 		 * @param string message Descriptive error message
 		 */
-		var TaskGroupException = function(message) {
+		var TaskGroupException = function (message) {
 			return {
 				"name": "TaskGroupException",
 				"message": message,
@@ -170,37 +237,7 @@
 				}
 			};
 		}
-
-
-
-		/**
-		 * Confirms whether taskObject has all the interface methods required 
-		 * 
-		 * @param  Object taskObject Supposed Task instance to be checked
-		 * @return {Boolean}
-		 */
-		var isTask = function(taskObject) {
-			if (typeof taskObject == "object") {
-				var requiredTaskMethods = [
-					"increment",
-					"reset",
-					"getTimeSpent",
-					"getName",
-					"setName",
-					"delete",
-					"isFlushable"
-				];
-				for (var i = 0; i < requiredTaskMethods.length; i += 1) {
-					if (typeof taskObject[requiredTaskMethods[i]] != 'function') {
-						return false;
-					}
-				}
-				return true;
-			}
-			else {
-				return false;	
-			}
-		}
+		
 
 		/**
 		 * Confirms this group houses the given taskObject
@@ -208,13 +245,30 @@
 		 * @param  Task Task object to look for
 		 * @return Boolean True if found in the group
 		 */
-		var hasTask = function(taskObject) {
-			for (var i = 0; i < tasks.length; i += 1) {
+		var hasTask = function (taskObject) {
+			var i;
+
+			for (i = 0; i < tasks.length; i += 1) {
 				if (tasks[i] == taskObject) {
 					return true;
 				}
 			}
 			return false;
+		}
+
+		//Set the ID
+		if (typeof uniqueId !== 'object' && typeof uniqueId !== 'undefined') {
+			if (typeof uniqueId.toString === 'function') {
+				id = uniqueId.toString();
+			} else {
+				throw new TaskGroupException(
+					"Constructor: uniqueId is not stringifyable."
+				);
+			}
+		} else {
+			throw new TaskGroupException(
+				"Constructor: uniqueId is not stringifyable, is " + typeof uniqueId
+			);
 		}
 
 
@@ -230,7 +284,7 @@
 			 * @param Task taskObject
 			 * @return TaskGroup This instance
 			 */
-			"addTask": function(taskObject) {
+			"addTask": function (taskObject) {
 				if (isTask(taskObject)) {
 					if ( ! hasTask(taskObject)) {
 						tasks.push(taskObject);
@@ -250,8 +304,10 @@
 			 * @param  Task taskObject 
 			 * @return TaskGroup This instance
 			 */
-			"removeTask": function(taskObject) {
-				for (var i = 0; i < tasks.length; i += 1) {
+			"removeTask": function (taskObject) {
+				var i;
+
+				for (i = 0; i < tasks.length; i += 1) {
 					if(tasks[i] == taskObject) { //task located
 						tasks.splice(i, 1); //remove from array
 						break; //terminate looping through tasks
@@ -266,10 +322,11 @@
 			 * 
 			 * @return int Time spent in seconds
 			 */
-			"getTimeSpent": function() {
+			"getTimeSpent": function () {
+				var i;
 				var timeSpent = 0;
 
-				for (var i = 0; i < tasks.length; i += 1) {
+				for (i = 0; i < tasks.length; i += 1) {
 					timeSpent +=  tasks[i].getTimeSpent();
 				}
 
@@ -281,7 +338,7 @@
 			 * 
 			 * @return string
 			 */
-			"getName": function() {
+			"getName": function () {
 				return groupName;
 			},
 
@@ -291,7 +348,7 @@
 			 * @param String newName
 			 * @return TaskGroup This instance
 			 */
-			"setName": function(newName) {
+			"setName": function (newName) {
 				if (typeof newName === 'string') {
 					//check length. If exceeded, trim and add "..."
 					if (newName.length > MAX_GROUP_NAME_LENGTH) {
@@ -311,11 +368,33 @@
 			},
 
 			/**
+			 * Iterates over the tasks in the group and removes the flushables
+			 * @return TaskGroup This instance
+			 */
+			"flushDeletedTasks": function () {
+				var i;
+				var tasksToRemove = [];
+
+				for (i = 0; i < tasks.length; i += 1) {
+					if (tasks[i].isFlushable()) {
+						tasksToRemove.push(tasks[i]);
+					}
+				}
+				//Doing this in two loops because removing them while in the above
+				//for loop would cause it to break (array length would break)
+				for (i = 0; i < tasksToRemove.length; i += 1) {
+					this.removeTask(tasksToRemove[i]);
+				}
+
+				return this;
+			}
+
+			/**
 			 * Marks the group to be removed on the next iteration
 			 * 
 			 * @return null
 			 */
-			"delete": function() { 
+			"delete": function () { 
 				flushable = true;
 			},
 
@@ -324,14 +403,159 @@
 			 * 
 			 * @return boolean true if delete() has ran
 			 */
-			"isFlushable": function() {
+			"isFlushable": function () {
 				return flushable;
 			}
 
 		};
 	};
 
-	var TaskTimer = function() {
+	var TaskTimer = function () {
+
+		//Private properties
+		
+		/**
+		 * Dictionary to quickly look up tasks based on their id string
+		 * @type Object
+		 */
+		var taskIndex = { };
+
+		/**
+		 * Disctionary to quickly look up task groups based on their id string
+		 * @type Object
+		 */
+		var taskGroupIndex = { };
+
+		/**
+		 * Used to make sure tasks get a unique identifier
+		 * @type Number
+		 */
+		var uniqueTaskCounter = 0;
+
+		/**
+		 * Used to make sure task groups get a unique identifier
+		 * @type Number
+		 */
+		var uniqueTaskGroupCounter = 0;
+
+		/**
+		 * Task the user is currently working on, to be incemented every second
+		 * @type Task
+		 */
+		var activeTask = null;
+
+		/**
+		 * Variable to which the interval timer is to be assigned
+		 * @type Number
+		 */
+		var timer = 0;
+
+		/**
+		 * [timerRunning description]
+		 * @type {Boolean}
+		 */
+		var timerRunning = false;
+
+		
+
+		var TaskTimerException = function (message) {
+			return {
+				"name": "TaskTimerException",
+				"message": message,
+				"toString": function() {
+					return this.name + ": " + this.message;
+				}
+			};
+		}
+
+		/**
+		 * Iterates over all Tasks and removes those that are flushable
+		 *
+		 * Also iterates over groups and commands the groups to flush flushable
+		 * tasks from there. 
+		 *
+		 * The main goal of this function is removing any exisint reference to
+		 * tasks that have been deleted, so the environment can garbage-collect 
+		 * them.
+		 * 
+		 * @return null
+		 */
+		var flushDeletedTasks = function () {
+			var index;
+
+			//Flush them from the main task index
+			for (index in taskIndex) {
+				if (taskIndex.hasOwnProperty(index)) { 
+					//only check actual Task objects
+					if (taskIndex[index].isFlushable()) {
+						delete taskIndex[index];
+					}
+				}
+			}
+
+			//Flush them from the existing groups
+			for (index in taskGroupIndex) {
+				if (taskGroupIndex.hasOwnProperty(index)) {
+					taskGroupIndex[index].flushDeletedTasks();
+				}
+			}
+
+			//check activeTask for flushableness
+			if (isTask(activeTask) && activeTask.isFlushable()) {
+				activeTask = null;
+			}
+
+			return null;
+		};
+
+		/**
+		 * Iterates over all TaskGroups and removes those that are flushable.
+		 *
+		 * The main goal of this function is removing any reference to deleted
+		 * task groups, so the environment can garbage collect them.
+		 * 
+		 * @return null
+		 */
+		var flushDeletedTaskGroups = function () {
+			var index;
+
+			for (index in taskGroupIndex) {
+				if (taskGroupIndex.hasOwnProperty(index)) {
+					if (taskGroupIndex[index].isFlushable()) {
+						delete taskGroupIndex[index];
+					}
+				}
+			}
+
+			return null;
+		};
+
+		/**
+		 * Flushes deleted tasks, deleted groups and increments the active task
+		 * 
+		 * @return null
+		 */
+		var iteration = function () {
+			flushDeletedTasks();
+			flushDeletedTaskGroups();
+
+			if (isTask(activeTask)) {
+				activeTask.increment();
+			}
+		};
+
+		var initiateInterval = function () {
+			//ensure stopping a running timer to avoid duplicate timers
+			clearInterval(timer);
+
+			timer = setInterval(iteration, 1000);
+			timerRunning = true;
+		}
+
+		var stopInterval = function () {
+			clearInterval(timer);
+			timerRunning = false;
+		}
 		
 		// Public interface of TaskTimer object
 		return {
@@ -347,8 +571,18 @@
 			 * @param string taskId identifier of the task to be looked up
 			 * @return Task|null The task object requested or null if not found
 			 */
-			"getTaskById": function(taskId) {
-
+			"getTaskById": function (taskId) {
+				if (typeof taskId === 'string') {
+					if (typeof taskIndex[taskId] !== 'undefined') {
+						return taskIndex[taskId];
+					} 
+				} else {
+					throw new TaskTimerException(
+						"getTaskById: type mismatch. taskId should be of type string, "
+						+ typeof(taskId) + " given."
+					);
+				}
+				return null;
 			},
 
 			/**
@@ -358,8 +592,12 @@
 			 * 
 			 * @return Task new empty task Object
 			 */
-			"createTask": function() {
-
+			"createTask": function () {
+				var taskIdentifier = "task_" + (++uniqueTaskCounter).toString();
+				var newTask = new Task(taskIdentifier);
+				
+				taskIndex[taskIdentifier] = newTask;
+				return newTask;
 			},
 
 			/**
@@ -370,8 +608,16 @@
 			 * @param  Task taskObject
 			 * @return null
 			 */
-			"activateTask": function(taskObject) {
+			"activateTask": function (taskObject) {
+				if (isTask(taskObject)) {
+					activeTask = taskObject;
+				} else {
+					throw new TaskTimerException(
+						"activateTask: taskObject does not have a valid Task interface"
+					);
+				}
 
+				return null;
 			},
 
 			/**
@@ -379,8 +625,13 @@
 			 * 
 			 * @return Taskgroup New nameless, empty TaskGroup object
 			 */
-			"createGroup": function() {
+			"createGroup": function () {
+				var groupIdentifier = "group_" 
+					+ (++uniqueTaskGroupCounter).toString();
+				var newTaskGroup = new TaskGroup(groupIdentifier);
 
+				taskGroupIndex[groupIdentifier] = newTaskGroup;
+				return newTaskGroup;
 			},
 
 			/**
@@ -388,8 +639,9 @@
 			 * 
 			 * @return null
 			 */
-			"startTimer": function() {
-
+			"startTimer": function () {
+				initiateInterval();
+				return null;
 			},
 
 			/**
@@ -397,8 +649,9 @@
 			 * 
 			 * @return null
 			 */
-			"resumeTimer": function() {
-
+			"resumeTimer": function () {
+				initiateInterval();
+				return null;
 			},
 
 			/**
@@ -406,8 +659,9 @@
 			 * 
 			 * @return null
 			 */
-			"pauseTimer": function() {
-
+			"pauseTimer": function () {
+				stopInterval();
+				return null;
 			}
 
 		};
