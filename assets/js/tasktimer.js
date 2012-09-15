@@ -2,7 +2,47 @@
 
 	var Task = function() {
 
+		//Private constants
+		var MAX_TASK_NAME_LENGTH = 100;
+
+		//Private properties
+		
+		/**
+		 * Time spent on this task so far, in seconds 
+		 * @type Number
+		 */
+		var timeSpent = 0;
+
+		/**
+		 * Name/label for this task, to identify it to the user
+		 * @type String
+		 */
+		var taskName = '';
+
+		/**
+		 * Flag to set to true when public method delete() is ran		 *
+		 * Marks that the task is to be deleted from outside lists
+		 * @type Boolean
+		 */
+		var flushable = false;
+
+		/**
+		 * If anything goes wrong within a Task object, this can be thrown.
+		 * 
+		 * @param string message Descriptive error message
+		 */
+		var TaskException = function(message) {
+			return {
+				"name": "TaskException",
+				"message": message,
+				"toString": function() {
+					return this.name + ": " + message;
+				}
+			};
+		}
+
 		//Public interface of Task object
+		
 		return {
 
 			/**
@@ -11,7 +51,8 @@
 			 * @return Task This instance
 			 */
 			"increment": function() {
-
+				timeSpent += 1;
+				return this;
 			},
 
 			/**
@@ -20,7 +61,8 @@
 			 * @return Task This instance
 			 */
 			"reset": function() {
-
+				timeSpent = 0;
+				return this;
 			},
 
 			/**
@@ -29,7 +71,7 @@
 			 * @return int Time spent in seconds
 			 */
 			"getTimeSpent": function() {
-
+				return timeSpent;
 			},
 
 			/**
@@ -38,16 +80,31 @@
 			 * @return string
 			 */
 			"getName": function() {
-
+				return taskName;
 			},
 
 			/**
 			 * Updates the name of this task
-			 * 
+			 *
+			 * @param string newName
 			 * @return Task This instance
 			 */
-			"setName": function() {
+			"setName": function(newName) {
+				if (typeof newName === 'string') {
+					//check length. If exceeded, trim and add "..."
+					if (newName.length > MAX_TASK_NAME_LENGTH) {
+						taskName = newName.substr(0, MAX_TASK_NAME_LENGTH - 3) + '...';
+					} else {
+						taskName = newName;
+					}
+				} else {
+					throw new TaskException(
+						"setName: type mismatch. newName should be of type string, " 
+						+ typeof(newName) + " given."
+					);
+				}
 
+				return this;
 			},
 
 			/**
@@ -56,16 +113,17 @@
 			 * @return null
 			 */
 			"delete": function() {
-
+				flushable = true;
+				return null;
 			},
 
 			/**
 			 * Retrieve whether the task was set to be removed with delete()
 			 * 
-			 * @return bool true if delete() has ran
+			 * @return boolean true if delete() has ran
 			 */
 			"isFlushable": function() {
-
+				return flushable;
 			}
 
 		};
@@ -82,7 +140,7 @@
 			 * Its time spent will be added to the total of this group
 			 * Will not add the task if it is already part of this group.
 			 * 
-			 * @param  Task taskObject
+			 * @param Task taskObject
 			 * @return TaskGroup This instance
 			 */
 			"addTask": function(taskObject) {
@@ -138,7 +196,7 @@
 			/**
 			 * Retrieve whether the group was set to be removed with delete()
 			 * 
-			 * @return bool true if delete() has ran
+			 * @return boolean true if delete() has ran
 			 */
 			"isFlushable": function() {
 
@@ -225,7 +283,7 @@
 			"pauseTimer": function() {
 
 			}
-			
+
 		};
 	};
 
