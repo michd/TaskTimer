@@ -1,8 +1,77 @@
 (function($) {
 
+	var Task = function() {
+
+		//Public interface of Task object
+		return {
+			/**
+			 * Adds a second to the time spent on this task
+			 * 
+			 * @return Task This instance
+			 */
+			"increment": function() {
+
+			},
+
+			/**
+			 * Sets the time spent on this task back to 0 seconds
+			 * 
+			 * @return Task This instance
+			 */
+			"reset": function() {
+
+			},
+
+			/**
+			 * Retrieve the time spent on this task so far
+			 * 
+			 * @return int Time spent in seconds
+			 */
+			"getTimeSpent": function() {
+
+			},
+
+			/**
+			 * Retrieve the name of this task
+			 * 
+			 * @return string
+			 */
+			"getName": function() {
+
+			},
+
+			/**
+			 * Updates the name of this task
+			 * 
+			 * @return Task This instance
+			 */
+			"setName": function() {
+
+			},
+
+			/**
+			 * Marks the task to be removed on the next iteration(increment)
+			 * 
+			 * @return null
+			 */
+			"delete": function() {
+
+			},
+
+			/**
+			 * Retrieve whether the task was set to be removed with delete()
+			 * 
+			 * @return bool true if delete() has ran
+			 */
+			"isFlushable": function() {
+
+			}
+		};
+	};
+
 	var TaskTimer = function() {
 		
-		// Public interface of tasktimer object
+		// Public interface of TaskTimer object
 		return {
 
 			/**
