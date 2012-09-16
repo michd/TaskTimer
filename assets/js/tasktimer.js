@@ -1,6 +1,16 @@
 (function ($) {
 	var global = (function(){ return this; })(); 
 
+	global.String.prototype.trim = function () {
+		return this.replace(/^\s+|\s+$/g,"");
+	}
+	global.String.prototype.ltrim = function () {
+		return this.replace(/^\s+/,"");
+	}
+	global.String.prototype.rtrim = function () {
+		return this.replace(/\s+$/,"");
+	}
+
 	//Helper functions
 
 	/**
@@ -20,7 +30,7 @@
 				"getName",
 				"getId",
 				"setName",
-				"delete",
+				"remove",
 				"isFlushable"
 			];
 			for (i = 0; i < requiredTaskMethods.length; i += 1) {
@@ -60,7 +70,7 @@
 		var taskName = "";
 
 		/**
-		 * Flag to set to true when public method delete() is ran
+		 * Flag to set to true when public method remove() is ran
 		 * Marks that the task is to be deleted from outside lists
 		 * @type Boolean
 		 */
@@ -152,13 +162,16 @@
 			 * @return Task This instance
 			 */
 			"setName": function (newName) {
+				newName = newName.trim();
 				if (typeof newName === 'string') {
 					//check length. If exceeded, trim and add "..."
 					if (newName.length > MAX_TASK_NAME_LENGTH) {
 						taskName = newName.substr(0, MAX_TASK_NAME_LENGTH - 3) 
 							+ '...';
 					} else {
-						taskName = newName;
+						if (newName.length > 0) {
+							taskName = newName;
+						}						
 					}
 				} else {
 					throw new TaskException(
@@ -175,15 +188,15 @@
 			 * 
 			 * @return null
 			 */
-			"delete": function () {
+			"remove": function () {
 				flushable = true;
 				return null;
 			},
 
 			/**
-			 * Retrieve whether the task was set to be removed with delete()
+			 * Retrieve whether the task was set to be removed with remove()
 			 * 
-			 * @return boolean true if delete() has ran
+			 * @return boolean true if remove() has ran
 			 */
 			"isFlushable": function () {
 				return flushable;
@@ -218,7 +231,7 @@
 		var groupName = '';
 
 		/**
-		 * Flag to set to true when public method delete() is ran	
+		 * Flag to set to true when public method remove() is ran	
 		 * Marks that the task group is to be deleted from interface and whatnot
 		 * @type Boolean
 		 */
@@ -351,12 +364,15 @@
 			 */
 			"setName": function (newName) {
 				if (typeof newName === 'string') {
+					newName = newName.trim();
 					//check length. If exceeded, trim and add "..."
 					if (newName.length > MAX_GROUP_NAME_LENGTH) {
 						groupName = newName.substr(0, MAX_GROUP_NAME_LENGTH - 3) 
 							+ '...';
 					} else {
-						groupName = newName;
+						if (newName.trim.length > 0) {
+							groupName = newName;
+						}
 					}
 				} else {
 					throw new TaskGroupException(
@@ -395,14 +411,14 @@
 			 * 
 			 * @return null
 			 */
-			"delete": function () { 
+			"remove": function () { 
 				flushable = true;
 			},
 
 			/**
-			 * Retrieve whether the group was set to be removed with delete()
+			 * Retrieve whether the group was set to be removed with remove()
 			 * 
-			 * @return boolean true if delete() has ran
+			 * @return boolean true if remove() has ran
 			 */
 			"isFlushable": function () {
 				return flushable;
@@ -759,7 +775,7 @@
 					$(this).closest('tr').attr('id')
 				);									
 				task.setName($(this).val());
-				$(this).replaceWith($('<label>').html($(this).val()));
+				$(this).replaceWith($('<label>').html(task.getName()));
 			}
 		})
 		.on("blur", "td input[type=text]", function (event) { 
@@ -768,7 +784,7 @@
 				$(this).closest('tr').attr('id')
 			);									
 			task.setName($(this).val());
-			$(this).replaceWith($('<label>').html($(this).val()));
+			$(this).replaceWith($('<label>').html(task.getName()));
 		})
 		.on("focus", "td input[type=text]", function (event) {
 			this.select();
@@ -825,7 +841,7 @@
 								"Are you sure you want to delete the task named '" 
 								+ task.getName() + "'? You cannot undo this."
 							)) {
-								task.delete();
+								task.remove();
 								$(this).closest('tr').remove();
 							}
 						})
