@@ -113,6 +113,11 @@ body {
 	font-size: 16px;
 }
 
+h1 {
+	font-size: 28px;
+	margin-bottom: 15px;
+}
+
 menu {
 	margin-bottom: 15px;
 }
@@ -146,11 +151,10 @@ tfoot td {
 tr:nth-child(even) {
 	background-color: #E5E5E5;
 }
+
 tr.active td {
 	background-color: #FFC;
 }
-
-
 
 .active-column {
 	width: 50px;
@@ -184,3 +188,8 @@ td label {
 th {
 	text-align: left;
 }
+
+footer {
+	margin-top: 15px;
+	font-size: 0.8em;
+} 
