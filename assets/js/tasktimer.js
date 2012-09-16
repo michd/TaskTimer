@@ -723,21 +723,59 @@
 		var $taskList = $('<table>').append(
 			$('<thead>').append(
 				$('<tr>').append(
-					$('<th>').html('Active'),
+					$('<th>', {"class": "active-column"}).html('Active'),
 					$('<th>').html('Task name'),
-					$('<th>').html('Time spent'),
-					$('<th>').html('Delete?')
+					$('<th>', {"class": "timespent-column"}).html('Time spent'),
+					$('<th>', {"class": "delete-column"}).html('Delete?')
 				)
 			),
 			$('<tbody>'),
 			$('<tfoot>').append(
 				$('<tr>').append(
 					$('<td>', {"colspan": 2}).html('Total time spent'),
-					$('<td>', {"class": "time"}).html('0s'),
+					$('<td>', {"class": "timespent-column"}).html('0s'),
 					$('<td>').html('')
 				)
 			)
 		);
+
+		//Clicking labels turns them into an editor
+		$($taskList).on("click", "td label", function (event) {
+			$td = $(this).closest('td');
+			$(this).replaceWith(
+				$('<input>', {
+					"type": "text",
+					"placeholder": "Add task name",
+					"value": $(this).html()
+				})
+			);
+			$td.find('input').focus();
+		});
+
+		//Hitting enter in task name edit fields saves them and turns to label
+		$($taskList).on("keydown", "td input[type=text]", function (event) {			
+			if (event.which === 13) {
+				var task = taskTimer.getTaskById(
+					$(this).closest('tr').attr('id')
+				);									
+				task.setName($(this).val());
+				$(this).replaceWith($('<label>').html($(this).val()));
+			}
+		})
+		.on("blur", "td input[type=text]", function (event) { 
+			//So does losing focus from the field
+			var task = taskTimer.getTaskById(
+				$(this).closest('tr').attr('id')
+			);									
+			task.setName($(this).val());
+			$(this).replaceWith($('<label>').html($(this).val()));
+		})
+		.on("focus", "td input[type=text]", function (event) {
+			this.select();
+		})
+
+		
+		
 
 		//add them to the $container
 		$container.append(
@@ -755,7 +793,7 @@
 			$taskList.find('tbody').append(
 				$('<tr>', {"id": newTask.getId()}).append(
 					
-					$('<td>').html(
+					$('<td>', {"class": "active-column"}).html(
 						$('<input>', {"type": "radio", "name": "taskselect"})
 						.click(function () {
 							taskTimer.activateTask(
@@ -765,23 +803,16 @@
 					),
 
 					$('<td>').html(
-						$('<input>', {"type": "text", "placeholder": "Add task name"})
-						.keydown(function (event) {
-							
-							if (event.which === 13) {
-								var task = taskTimer.getTaskById(
-									$(this).closest('tr').attr('id')
-								);	
-								console.log(task);
-								task.setName($(this).val());
-								$(this).replaceWith($('<label>').html($(this).val()));
-							}
-						}).focus()
+						$('<input>', {
+							"type": "text", 
+							"placeholder": "Add task name",
+							"value": newTask.getId()
+						})
 					),
 
-					$('<td>', {"class": "time"}).html('0s'),
+					$('<td>', {"class": "timespent-column"}).html('0s'),
 
-					$('<td>').html(
+					$('<td>', {"class": "delete-column"}).html(
 						$('<button>').html('Delete')
 						.click(function (event) {
 							var task = taskTimer.getTaskById(
@@ -800,7 +831,7 @@
 						})
 					)
 				)
-			);
+			).find('tr').last().find('input[type=text]').focus();
 		}
 
 
@@ -813,14 +844,40 @@
 			$taskList.find('tbody tr').each(function (index, elem) {
 				var task = taskTimer.getTaskById($(elem).attr('id'));
 
-				$('.time', elem).html(task.getTimeSpent() + 's'); //format better
+				$('.timespent-column', elem).html(styleTime(task.getTimeSpent())); //format better
 
 			});
 
 			//update total time
-			$taskList.find('tfoot td.time').html(
-				taskTimer.getTotalTimeSpent() + 's'
+			$taskList.find('tfoot td.timespent-column').html(
+				styleTime(taskTimer.getTotalTimeSpent())
 			);
+		}
+
+		function styleTime (rawTime) {
+			var divisions = [
+				{"name": "days", "seconds": 86400, "denoter": "d"},
+				{"name": "hours", "seconds": 3600, "denoter": "h"},
+				{"name": "minutes", "seconds": 60, "denoter": "m"},
+				{"name": "seconds", "seconds": 1, "denoter": "s"}
+			];
+			var styledTime = [];
+			var i;
+			var curDiv = 0;
+
+			for (i = 0; i < divisions.length; i += 1) {
+				curDiv = Math.floor(rawTime / divisions[i].seconds);
+				if (curDiv > 0) {
+					styledTime.push(curDiv.toString() + divisions[i].denoter);
+				}
+				rawTime %= divisions[i].seconds;
+			}
+
+			if (styledTime.length === 0) {
+				styledTime.push("0" + divisions[i-1].denoter);
+			}
+
+			return styledTime.join(' ');			
 		}
 
 	};
