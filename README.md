@@ -3,6 +3,8 @@ TaskTimer
 
 TaskTimer is a little tool that helps you keep track of how much time you've spent on various tasks. It's really simple, designed to do just that.
 
+[View the live demo](http://tasktimer.tapo.me)
+
 Current state
 -------------
 
