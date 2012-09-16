@@ -1,4 +1,5 @@
 (function ($) {
+	var global = (function(){ return this; })(); 
 
 	//Helper functions
 
@@ -11,7 +12,7 @@
 	var isTask = function (taskObject) {
 		var i;
 
-		if (typeof taskObject === "object") {
+		if (typeof taskObject === "object" && taskObject !== null) {
 			var requiredTaskMethods = [
 				"increment",
 				"reset",
@@ -23,7 +24,7 @@
 				"isFlushable"
 			];
 			for (i = 0; i < requiredTaskMethods.length; i += 1) {
-				if (typeof taskObject[requiredTaskMethods[i]] !== 'function') {
+				if ( ! taskObject.hasOwnProperty(requiredTaskMethods[i])) {
 					return false;
 				}
 			}
@@ -141,8 +142,8 @@
 			 * @return string [description]
 			 */
 			"getId": function () {
-				return identifier;
-			}
+				return id;
+			},
 
 			/**
 			 * Updates the name of this task
@@ -387,7 +388,7 @@
 				}
 
 				return this;
-			}
+			},
 
 			/**
 			 * Marks the group to be removed on the next iteration
@@ -466,7 +467,7 @@
 					return this.name + ": " + this.message;
 				}
 			};
-		}
+		};
 
 		/**
 		 * Iterates over all Tasks and removes those that are flushable
@@ -548,14 +549,14 @@
 			//ensure stopping a running timer to avoid duplicate timers
 			clearInterval(timer);
 
-			timer = setInterval(iteration, 1000);
+			timer = global.setInterval(iteration, 1000);
 			timerRunning = true;
 		}
 
 		var stopInterval = function () {
-			clearInterval(timer);
+			global.clearInterval(timer);
 			timerRunning = false;
-		}
+		};
 		
 		// Public interface of TaskTimer object
 		return {
@@ -621,6 +622,23 @@
 			},
 
 			/**
+			 * Adds up the time spent on all available tasks
+			 * 
+			 * @return int Time in seconds
+			 */
+			"getTotalTimeSpent": function () {
+				var totalTime = 0, index;
+
+				for (index in taskIndex) {
+					if (taskIndex.hasOwnProperty(index)) { //only get actual tasks
+						totalTime += taskIndex[index].getTimeSpent();
+					}
+				}
+
+				return totalTime;
+			},
+
+			/**
 			 * Creates a new TaskGroup. 
 			 * 
 			 * @return Taskgroup New nameless, empty TaskGroup object
@@ -662,83 +680,155 @@
 			"pauseTimer": function () {
 				stopInterval();
 				return null;
+			},
+
+			/**
+			 * Retrieves whether or not the timer is currently running
+			 * 
+			 * @return Boolean True if the interval is on, false otherwise
+			 */
+			"isRunning": function () {
+				return timerRunning;
 			}
 
 		};
 	};
 
 
-
-
-
-
-
-
-
-
-
-	var initalizeList = function() {
-		if ($('#tasklist ul').length == 0) {
-			$('#tasklist').append($('<ul>'));
-		}
-	};
-
-	var editTaskName = function($listItem) {
-		var currentValue = $listItem.find('.form label.taskname').html();
-		$listItem.find('.form label.taskname').replaceWith(
-			$('<input>', {"type": "text", "class": "taskname","value": currentValue})
-			.blur(function(event) {
-				event.preventDefault();
-				if($(this).val() != '') {
-					setTaskName($listItem, $(this).val());
-				}
-			})
-		);
-		$listItem.find('.form input[type=text]').focus();
-	};
-
-	var setTaskName = function($listItem, newName) {
-		$listItem.find('.form input[type=text]').replaceWith(
-			$('<label>', {"class": "taskname"}).html(newName)
-				.click(function(event) {
-					event.preventDefault();
-					editTaskName($listItem);
-				})
-		);
-
-		if($listItem.find('.form input[type=radio]').length == 0) {
-			$listItem.find('.form').prepend(
-				$('<input>', {"type": "radio", "name":"active-task"})
-			);
-		}
-	};
-
-	$(function() {
-
-		$('#newtask').click(function(event) {
+	var TaskTimerInterface = function ($container) {
+		
+		//Set up a TaskTimer object
+		var taskTimer = new TaskTimer();
+		
+		//initalise some HTML elements	
+		var $newTaskButton = $('<button>').html('New task')
+		.click(function (event) {
 			event.preventDefault();
-			initalizeList();
+			createTask();
+		});
 
-			$('#tasklist ul').append(
-				$('<li>', {"class": "editing"}).append(
-					$('<div>', {"class": "form"}).append(
-						$('<input>', {
-							"type": "text", 
-							"placeholder": "Task name", 
-							"class": "taskname"
-						}).blur(function() {
-							if ($(this).val() != '') {
-								setTaskName($(this).closest('li'), $(this).val());
+		var $toggleTimerButton = $('<button>').html('Start timer')
+		.click(function(event) {
+			event.preventDefault();
+
+			if (taskTimer.isRunning()) {
+				taskTimer.pauseTimer();
+				$(this).html('Resume timer');
+			} else {
+				taskTimer.resumeTimer();
+				$(this).html('Pause timer');
+			}
+		});
+
+		var $taskList = $('<table>').append(
+			$('<thead>').append(
+				$('<tr>').append(
+					$('<th>').html('Active'),
+					$('<th>').html('Task name'),
+					$('<th>').html('Time spent'),
+					$('<th>').html('Delete?')
+				)
+			),
+			$('<tbody>'),
+			$('<tfoot>').append(
+				$('<tr>').append(
+					$('<td>', {"colspan": 2}).html('Total time spent'),
+					$('<td>', {"class": "time"}).html('0s'),
+					$('<td>').html('')
+				)
+			)
+		);
+
+		//add them to the $container
+		$container.append(
+			$('<menu>').append($newTaskButton, $toggleTimerButton),
+			$taskList
+		);
+
+		//start updateInterval
+		setInterval(updateInterface, 500);
+
+		//Set up a new task
+		function createTask () {
+			var newTask = taskTimer.createTask();
+			
+			$taskList.find('tbody').append(
+				$('<tr>', {"id": newTask.getId()}).append(
+					
+					$('<td>').html(
+						$('<input>', {"type": "radio", "name": "taskselect"})
+						.click(function () {
+							taskTimer.activateTask(
+								taskTimer.getTaskById($(this).closest('tr').attr('id'))
+							);
+						})
+					),
+
+					$('<td>').html(
+						$('<input>', {"type": "text", "placeholder": "Add task name"})
+						.keydown(function (event) {
+							
+							if (event.which === 13) {
+								var task = taskTimer.getTaskById(
+									$(this).closest('tr').attr('id')
+								);	
+								console.log(task);
+								task.setName($(this).val());
+								$(this).replaceWith($('<label>').html($(this).val()));
+							}
+						}).focus()
+					),
+
+					$('<td>', {"class": "time"}).html('0s'),
+
+					$('<td>').html(
+						$('<button>').html('Delete')
+						.click(function (event) {
+							var task = taskTimer.getTaskById(
+								$(this).closest('tr').attr('id')
+							);
+
+							event.preventDefault();							
+
+							if (confirm(
+								"Are you sure you want to delete the task named '" 
+								+ task.getName() + "'? You cannot undo this."
+							)) {
+								task.delete();
+								$(this).closest('tr').remove();
 							}
 						})
 					)
 				)
-			).find('li:last input[type=text]').focus();
-		});		
+			);
+		}
 
-		$('#tasklist').submit(function(event) {
-			event.preventDefault();
-		});
+
+		function updateInterface () {
+			$taskList.find('tbody tr').removeClass('active');
+			$taskList.find('tbody tr input[type=radio]:checked').closest('tr')
+				.addClass('active');
+			
+			//update individual time
+			$taskList.find('tbody tr').each(function (index, elem) {
+				var task = taskTimer.getTaskById($(elem).attr('id'));
+
+				$('.time', elem).html(task.getTimeSpent() + 's'); //format better
+
+			});
+
+			//update total time
+			$taskList.find('tfoot td.time').html(
+				taskTimer.getTotalTimeSpent() + 's'
+			);
+		}
+
+	};
+
+	
+
+	$(function() {
+		TaskTimerInterface($('#container'));
 	});
 
 
