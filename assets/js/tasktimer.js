@@ -11,13 +11,13 @@
 		return this.replace(/\s+$/,"");
 	}
 
-	//Helper functions
+	//Helper functions	
 
 	/**
 	 * Confirms whether taskObject has all the interface methods required 
 	 * 
 	 * @param  Object taskObject Supposed Task instance to be checked
-	 * @return {Boolean}
+	 * @return Boolean
 	 */
 	var isTask = function (taskObject) {
 		var i;
@@ -43,6 +43,41 @@
 			return false;
 		}
 	};
+
+	/**
+	 * Executes callBack a number of times based on frequency it should
+	 * have been run and time lapsed
+	 * 
+	 * @param   Number timeLapsed  Time lapsed in miliseconds
+	 * @param   Function callBack 
+	 * @param   Number frequency times per second callBack is normally executed
+	 * @return  null
+	 */
+	var intervalCatchup = function(timeLapsed, callBack, frequency) {
+		var executeCount, i;
+		if (frequency > 0) {
+			executeCount = Math.round(timeLapsed / (frequency * 1000));
+			for (i = 0; i < executeCount; callBack(), i += 1);
+		}
+		return null;
+	}	
+
+	/**
+	 * Show a confirm dialog, catch up on missing interval calls 
+	 * and return confirm value
+	 * @param   String message
+	 * @param   Function callBack  
+	 * @param   Number frequency times per second callBack is normally executed
+	 * @return  Boolean confirm return value	 
+	 */
+	var _confirm = function(message, callBack, frequency) {
+		var timeBefore = Date.now(), 
+		returnValue = window.confirm(message);
+
+		intervalCatchup((Date.now() - timeBefore), callBack, frequency);
+
+		return returnValue;
+	}
 
 	var Task = function (uniqueId) {
 
@@ -705,6 +740,10 @@
 			 */
 			"isRunning": function () {
 				return timerRunning;
+			},
+
+			"intervalCatchup": function() {
+				iteration();
 			}
 
 		};
@@ -835,12 +874,20 @@
 								$(this).closest('tr').attr('id')
 							);
 
+							var confirmation;
+
 							event.preventDefault();							
 
-							if (confirm(
+							confirmation = _confirm(
 								"Are you sure you want to delete the task named '" 
-								+ task.getName() + "'? You cannot undo this."
-							)) {
+									+ task.getName() + "'? You cannot undo this.",
+								function() {
+									taskTimer.intervalCatchup();
+								},
+								1
+							);
+
+							if (confirmation) {
 								task.remove();
 								$(this).closest('tr').remove();
 							}
