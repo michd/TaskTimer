@@ -1,21 +1,22 @@
 (function ($) {
-	var global = (function(){ return this; })(); 
+	var global = (function () { return this; })();
+	$.cookie.json = true;
 
 	global.String.prototype.trim = function () {
 		return this.replace(/^\s+|\s+$/g,"");
-	}
+	};
 	global.String.prototype.ltrim = function () {
 		return this.replace(/^\s+/,"");
-	}
+	};
 	global.String.prototype.rtrim = function () {
 		return this.replace(/\s+$/,"");
-	}
+	};
 
-	//Helper functions	
+	//Helper functions
 
 	/**
-	 * Confirms whether taskObject has all the interface methods required 
-	 * 
+	 * Confirms whether taskObject has all the interface methods required
+	 *
 	 * @param  Object taskObject Supposed Task instance to be checked
 	 * @return Boolean
 	 */
@@ -33,23 +34,23 @@
 				"remove",
 				"isFlushable"
 			];
+
 			for (i = 0; i < requiredTaskMethods.length; i += 1) {
 				if ( ! taskObject.hasOwnProperty(requiredTaskMethods[i])) {
 					return false;
 				}
 			}
 			return true;
-		} else {
-			return false;
 		}
+		return false;
 	};
 
 	/**
 	 * Executes callBack a number of times based on frequency it should
 	 * have been run and time lapsed
-	 * 
+	 *
 	 * @param   Number timeLapsed  Time lapsed in miliseconds
-	 * @param   Function callBack 
+	 * @param   Function callBack
 	 * @param   Number frequency times per second callBack is normally executed
 	 * @return  null
 	 */
@@ -60,18 +61,18 @@
 			for (i = 0; i < executeCount; callBack(), i += 1);
 		}
 		return null;
-	}	
+	}
 
 	/**
-	 * Show a confirm dialog, catch up on missing interval calls 
+	 * Show a confirm dialog, catch up on missing interval calls
 	 * and return confirm value
 	 * @param   String message
-	 * @param   Function callBack  
+	 * @param   Function callBack
 	 * @param   Number frequency times per second callBack is normally executed
-	 * @return  Boolean confirm return value	 
+	 * @return  Boolean confirm return value
 	 */
 	var _confirm = function(message, callBack, frequency) {
-		var timeBefore = Date.now(), 
+		var timeBefore = Date.now(),
 		returnValue = window.confirm(message);
 
 		intervalCatchup((Date.now() - timeBefore), callBack, frequency);
@@ -79,41 +80,19 @@
 		return returnValue;
 	}
 
-	var Task = function (uniqueId) {
+	var Task = function (uniqueId, name) {
 
-		//Private constants
-		var MAX_TASK_NAME_LENGTH = 100;
+		var
+			MAX_TASK_NAME_LENGTH = 100,
 
-		//Private properties
-		
-		/**
-		 * Unique identifier for the task, set at creation time
-		 * @type String
-		 */
-		var id = "";
-
-		/**
-		 * Time spent on this task so far, in seconds 
-		 * @type Number
-		 */
-		var timeSpent = 0;
-
-		/**
-		 * Name/label for this task, to identify it to the user
-		 * @type String
-		 */
-		var taskName = "";
-
-		/**
-		 * Flag to set to true when public method remove() is ran
-		 * Marks that the task is to be deleted from outside lists
-		 * @type Boolean
-		 */
-		var flushable = false;
+			id = '',
+			timeSpent = 0,
+			taskName = '',
+			flushable = false;
 
 		/**
 		 * If anything goes wrong within a Task object, this can be thrown.
-		 * 
+		 *
 		 * @param string message Descriptive error message
 		 */
 		var TaskException = function (message) {
@@ -140,13 +119,17 @@
 			);
 		}
 
+		if (name) {
+			taskName = name;
+		}
+
 		//Public interface of Task object
-		
+
 		return {
 
 			/**
 			 * Adds a second to the time spent on this task
-			 * 
+			 *
 			 * @return Task This instance
 			 */
 			"increment": function () {
@@ -156,7 +139,7 @@
 
 			/**
 			 * Sets the time spent on this task back to 0 seconds
-			 * 
+			 *
 			 * @return Task This instance
 			 */
 			"reset": function () {
@@ -166,7 +149,7 @@
 
 			/**
 			 * Retrieve the time spent on this task so far
-			 * 
+			 *
 			 * @return int Time spent in seconds
 			 */
 			"getTimeSpent": function () {
@@ -175,7 +158,7 @@
 
 			/**
 			 * Retrieve the name of this task
-			 * 
+			 *
 			 * @return string
 			 */
 			"getName": function () {
@@ -201,16 +184,16 @@
 				if (typeof newName === 'string') {
 					//check length. If exceeded, trim and add "..."
 					if (newName.length > MAX_TASK_NAME_LENGTH) {
-						taskName = newName.substr(0, MAX_TASK_NAME_LENGTH - 3) 
+						taskName = newName.substr(0, MAX_TASK_NAME_LENGTH - 3)
 							+ '...';
 					} else {
 						if (newName.length > 0) {
 							taskName = newName;
-						}						
+						}
 					}
 				} else {
 					throw new TaskException(
-						"setName: type mismatch. newName should be of type string, " 
+						"setName: type mismatch. newName should be of type string, "
 						+ typeof(newName) + " given."
 					);
 				}
@@ -218,9 +201,19 @@
 				return this;
 			},
 
+			"setTimeSpent": function (newTimeSpent) {
+				if (typeof newTimeSpent === 'number') {
+					timeSpent = newTimeSpent;
+					return this;
+				}
+				throw new TaskException(
+					"setTimeSpent: newTimeSpent should be number, " + typeof newTimeSpent + " given."
+				);
+			},
+
 			/**
 			 * Marks the task to be removed on the next iteration(increment)
-			 * 
+			 *
 			 * @return null
 			 */
 			"remove": function () {
@@ -230,7 +223,7 @@
 
 			/**
 			 * Retrieve whether the task was set to be removed with remove()
-			 * 
+			 *
 			 * @return boolean true if remove() has ran
 			 */
 			"isFlushable": function () {
@@ -246,13 +239,13 @@
 		var MAX_GROUP_NAME_LENGTH = 50;
 
 		//Private properties
-		
+
 		/**
 		 * Unique identifier for the task group, set at creation time
 		 * @type String
 		 */
 		var id = "";
-		
+
 		/**
 		 * Holds the list of Task instances that are part of the group
 		 * @type Array Task instances
@@ -266,7 +259,7 @@
 		var groupName = '';
 
 		/**
-		 * Flag to set to true when public method remove() is ran	
+		 * Flag to set to true when public method remove() is ran
 		 * Marks that the task group is to be deleted from interface and whatnot
 		 * @type Boolean
 		 */
@@ -274,7 +267,7 @@
 
 		/**
 		 * If anything goes wrong within a TaskGroup object, this can be thrown.
-		 * 
+		 *
 		 * @param string message Descriptive error message
 		 */
 		var TaskGroupException = function (message) {
@@ -286,11 +279,11 @@
 				}
 			};
 		}
-		
+
 
 		/**
 		 * Confirms this group houses the given taskObject
-		 * 
+		 *
 		 * @param  Task Task object to look for
 		 * @return Boolean True if found in the group
 		 */
@@ -326,10 +319,10 @@
 
 			/**
 			 * Adds a task to this group.
-			 * 
+			 *
 			 * Its time spent will be added to the total of this group
 			 * Will not add the task if it is already part of this group.
-			 * 
+			 *
 			 * @param Task taskObject
 			 * @return TaskGroup This instance
 			 */
@@ -337,20 +330,20 @@
 				if (isTask(taskObject)) {
 					if ( ! hasTask(taskObject)) {
 						tasks.push(taskObject);
-					}					
+					}
 				} else {
 					throw new TaskGroupException(
 						"addTask: taskObject does not have a valid Task interface."
 					);
 				}
 
-				return this;			
+				return this;
 			},
 
 			/**
 			 * If the task is found in this group, removes it
-			 * 
-			 * @param  Task taskObject 
+			 *
+			 * @param  Task taskObject
 			 * @return TaskGroup This instance
 			 */
 			"removeTask": function (taskObject) {
@@ -368,7 +361,7 @@
 
 			/**
 			 * Retrieve the total time spent on all tasks in this group combined
-			 * 
+			 *
 			 * @return int Time spent in seconds
 			 */
 			"getTimeSpent": function () {
@@ -384,7 +377,7 @@
 
 			/**
 			 * Retrieve the name of this group
-			 * 
+			 *
 			 * @return string
 			 */
 			"getName": function () {
@@ -402,7 +395,7 @@
 					newName = newName.trim();
 					//check length. If exceeded, trim and add "..."
 					if (newName.length > MAX_GROUP_NAME_LENGTH) {
-						groupName = newName.substr(0, MAX_GROUP_NAME_LENGTH - 3) 
+						groupName = newName.substr(0, MAX_GROUP_NAME_LENGTH - 3)
 							+ '...';
 					} else {
 						if (newName.trim.length > 0) {
@@ -411,7 +404,7 @@
 					}
 				} else {
 					throw new TaskGroupException(
-						"setName: type mismatch. newName should be of type string, " 
+						"setName: type mismatch. newName should be of type string, "
 						+ typeof(newName) + " given."
 					);
 				}
@@ -443,16 +436,16 @@
 
 			/**
 			 * Marks the group to be removed on the next iteration
-			 * 
+			 *
 			 * @return null
 			 */
-			"remove": function () { 
+			"remove": function () {
 				flushable = true;
 			},
 
 			/**
 			 * Retrieve whether the group was set to be removed with remove()
-			 * 
+			 *
 			 * @return boolean true if remove() has ran
 			 */
 			"isFlushable": function () {
@@ -465,7 +458,7 @@
 	var TaskTimer = function () {
 
 		//Private properties
-		
+
 		/**
 		 * Dictionary to quickly look up tasks based on their id string
 		 * @type Object
@@ -508,7 +501,7 @@
 		 */
 		var timerRunning = false;
 
-		
+
 
 		var TaskTimerException = function (message) {
 			return {
@@ -524,12 +517,12 @@
 		 * Iterates over all Tasks and removes those that are flushable
 		 *
 		 * Also iterates over groups and commands the groups to flush flushable
-		 * tasks from there. 
+		 * tasks from there.
 		 *
 		 * The main goal of this function is removing any exisint reference to
-		 * tasks that have been deleted, so the environment can garbage-collect 
+		 * tasks that have been deleted, so the environment can garbage-collect
 		 * them.
-		 * 
+		 *
 		 * @return null
 		 */
 		var flushDeletedTasks = function () {
@@ -537,7 +530,7 @@
 
 			//Flush them from the main task index
 			for (index in taskIndex) {
-				if (taskIndex.hasOwnProperty(index)) { 
+				if (taskIndex.hasOwnProperty(index)) {
 					//only check actual Task objects
 					if (taskIndex[index].isFlushable()) {
 						delete taskIndex[index];
@@ -565,7 +558,7 @@
 		 *
 		 * The main goal of this function is removing any reference to deleted
 		 * task groups, so the environment can garbage collect them.
-		 * 
+		 *
 		 * @return null
 		 */
 		var flushDeletedTaskGroups = function () {
@@ -582,9 +575,26 @@
 			return null;
 		};
 
+		var commitToCookie = function () {
+			var
+				cTasks = [],
+				key;
+
+			for (key in taskIndex) {
+				if (taskIndex.hasOwnProperty(key)) {
+					cTasks.push({
+						name: taskIndex[key].getName(),
+						timeSpent: taskIndex[key].getTimeSpent()
+					});
+				}
+			}
+
+			$.cookie('tasks', cTasks, {expires: 14});
+		};
+
 		/**
 		 * Flushes deleted tasks, deleted groups and increments the active task
-		 * 
+		 *
 		 * @return null
 		 */
 		var iteration = function () {
@@ -594,6 +604,8 @@
 			if (isTask(activeTask)) {
 				activeTask.increment();
 			}
+
+			commitToCookie();
 		};
 
 		var initiateInterval = function () {
@@ -608,18 +620,20 @@
 			global.clearInterval(timer);
 			timerRunning = false;
 		};
-		
+
+
+
 		// Public interface of TaskTimer object
 		return {
 
 			/**
-			 * Retrieves a task object by its HTML id attribute. 
-			 * 
+			 * Retrieves a task object by its HTML id attribute.
+			 *
 			 * Used to connect the HTML element that envelopes the task's interface
-			 * to the JS object. 
-			 * This uses a dictionary to map ids to task. The dictionary gets 
+			 * to the JS object.
+			 * This uses a dictionary to map ids to task. The dictionary gets
 			 * updated whenever a task is flushed and whenever a task is added.
-			 * 
+			 *
 			 * @param string taskId identifier of the task to be looked up
 			 * @return Task|null The task object requested or null if not found
 			 */
@@ -627,7 +641,7 @@
 				if (typeof taskId === 'string') {
 					if (typeof taskIndex[taskId] !== 'undefined') {
 						return taskIndex[taskId];
-					} 
+					}
 				} else {
 					throw new TaskTimerException(
 						"getTaskById: type mismatch. taskId should be of type string, "
@@ -638,25 +652,25 @@
 			},
 
 			/**
-			 * Creates a new task object and returns it. 
-			 * 
+			 * Creates a new task object and returns it.
+			 *
 			 * The task object will be nameless and unactivated.
-			 * 
+			 *
 			 * @return Task new empty task Object
 			 */
-			"createTask": function () {
+			"createTask": function (name) {
 				var taskIdentifier = "task_" + (++uniqueTaskCounter).toString();
-				var newTask = new Task(taskIdentifier);
-				
+				var newTask = new Task(taskIdentifier, name);
+
 				taskIndex[taskIdentifier] = newTask;
 				return newTask;
 			},
 
 			/**
 			 * Sets the given task object as the active task.
-			 
+
 			 * This will add time to it every second.
-			 * 
+			 *
 			 * @param  Task taskObject
 			 * @return null
 			 */
@@ -674,7 +688,7 @@
 
 			/**
 			 * Adds up the time spent on all available tasks
-			 * 
+			 *
 			 * @return int Time in seconds
 			 */
 			"getTotalTimeSpent": function () {
@@ -690,12 +704,12 @@
 			},
 
 			/**
-			 * Creates a new TaskGroup. 
-			 * 
+			 * Creates a new TaskGroup.
+			 *
 			 * @return Taskgroup New nameless, empty TaskGroup object
 			 */
 			"createGroup": function () {
-				var groupIdentifier = "group_" 
+				var groupIdentifier = "group_"
 					+ (++uniqueTaskGroupCounter).toString();
 				var newTaskGroup = new TaskGroup(groupIdentifier);
 
@@ -705,7 +719,7 @@
 
 			/**
 			 * Starts the timer, adding time to the activated task
-			 * 
+			 *
 			 * @return null
 			 */
 			"startTimer": function () {
@@ -715,7 +729,7 @@
 
 			/**
 			 * Alias for startTimer
-			 * 
+			 *
 			 * @return null
 			 */
 			"resumeTimer": function () {
@@ -725,7 +739,7 @@
 
 			/**
 			 * Pauses the timer, not adding any time to any tasks.
-			 * 
+			 *
 			 * @return null
 			 */
 			"pauseTimer": function () {
@@ -735,7 +749,7 @@
 
 			/**
 			 * Retrieves whether or not the timer is currently running
-			 * 
+			 *
 			 * @return Boolean True if the interval is on, false otherwise
 			 */
 			"isRunning": function () {
@@ -751,11 +765,11 @@
 
 
 	var TaskTimerInterface = function ($container) {
-		
+
 		//Set up a TaskTimer object
 		var taskTimer = new TaskTimer();
-		
-		//initalise some HTML elements	
+
+		//initalise some HTML elements
 		var $newTaskButton = $('<button>').html('New task')
 		.click(function (event) {
 			event.preventDefault();
@@ -763,7 +777,7 @@
 		});
 
 		var $toggleTimerButton = $('<button>').html('Start timer')
-		.click(function(event) {
+		.click(function (event) {
 			event.preventDefault();
 
 			if (taskTimer.isRunning()) {
@@ -808,20 +822,20 @@
 		});
 
 		//Hitting enter in task name edit fields saves them and turns to label
-		$($taskList).on("keydown", "td input[type=text]", function (event) {			
+		$($taskList).on("keydown", "td input[type=text]", function (event) {
 			if (event.which === 13) {
 				var task = taskTimer.getTaskById(
 					$(this).closest('tr').attr('id')
-				);									
+				);
 				task.setName($(this).val());
 				$(this).replaceWith($('<label>').html(task.getName()));
 			}
 		})
-		.on("blur", "td input[type=text]", function (event) { 
+		.on("blur", "td input[type=text]", function (event) {
 			//So does losing focus from the field
 			var task = taskTimer.getTaskById(
 				$(this).closest('tr').attr('id')
-			);									
+			);
 			task.setName($(this).val());
 			$(this).replaceWith($('<label>').html(task.getName()));
 		})
@@ -829,8 +843,8 @@
 			this.select();
 		})
 
-		
-		
+
+
 
 		//add them to the $container
 		$container.append(
@@ -838,16 +852,19 @@
 			$taskList
 		);
 
+		//load tasks from cookie, if any
+		reloadFromCookie();
+
 		//start updateInterval
 		setInterval(updateInterface, 500);
 
 		//Set up a new task
-		function createTask () {
-			var newTask = taskTimer.createTask();
-			
+		function createTask (name) {
+			var newTask = taskTimer.createTask(name);
+
 			$taskList.find('tbody').append(
 				$('<tr>', {"id": newTask.getId()}).append(
-					
+
 					$('<td>', {"class": "active-column"}).html(
 						$('<input>', {"type": "radio", "name": "taskselect"})
 						.click(function () {
@@ -859,9 +876,9 @@
 
 					$('<td>').html(
 						$('<input>', {
-							"type": "text", 
+							"type": "text",
 							"placeholder": "Add task name",
-							"value": newTask.getId()
+							"value": newTask.getName() || newTask.getId()
 						})
 					),
 
@@ -876,10 +893,10 @@
 
 							var confirmation;
 
-							event.preventDefault();							
+							event.preventDefault();
 
 							confirmation = _confirm(
-								"Are you sure you want to delete the task named '" 
+								"Are you sure you want to delete the task named '"
 									+ task.getName() + "'? You cannot undo this.",
 								function() {
 									taskTimer.intervalCatchup();
@@ -895,6 +912,7 @@
 					)
 				)
 			).find('tr').last().find('input[type=text]').focus();
+			return newTask;
 		}
 
 
@@ -902,11 +920,11 @@
 			$taskList.find('tbody tr').removeClass('active');
 			$taskList.find('tbody tr input[type=radio]:checked').closest('tr')
 				.addClass('active');
-			
+
 			//update individual time
 			$taskList.find('tbody tr').each(function (index, elem) {
 				var task = taskTimer.getTaskById($(elem).attr('id'));
-
+				$('label', elem).html(task.getName());
 				$('.timespent-column', elem).html(styleTime(task.getTimeSpent())); //format better
 
 			});
@@ -915,6 +933,19 @@
 			$taskList.find('tfoot td.timespent-column').html(
 				styleTime(taskTimer.getTotalTimeSpent())
 			);
+		}
+
+		function reloadFromCookie () {
+			var
+				cTasks = $.cookie('tasks'),
+				newTask = null,
+				i, iMax;
+			if (cTasks) {
+				for (i = 0, iMax = cTasks.length; i < iMax; i += 1) {
+					newTask = createTask(cTasks[i].name);
+					newTask.setTimeSpent(cTasks[i].timeSpent);
+				}
+			}
 		}
 
 		function styleTime (rawTime) {
@@ -940,12 +971,12 @@
 				styledTime.push("0" + divisions[i-1].denoter);
 			}
 
-			return styledTime.join(' ');			
+			return styledTime.join(' ');
 		}
 
 	};
 
-	
+
 
 	$(function() {
 		TaskTimerInterface($('#container'));
